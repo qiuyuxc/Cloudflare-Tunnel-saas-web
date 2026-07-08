@@ -35,13 +35,18 @@ cd tunnel-manager
 ./install.sh
 ```
 
-脚本会自动检测 Docker 环境，引导填写 Cloudflare 凭据，构建并启动服务。首次启动后查看日志获取初始密码：
+脚本会自动检测 Docker 环境，引导填写 Cloudflare 凭据，选择镜像源（国内/官方），构建并启动服务。首次启动后查看日志获取初始密码：
 
 ```bash
 docker compose logs | grep 密
 ```
 
 > 环境变量说明见压缩包内 `.env.example`。
+>
+> 镜像源相关环境变量（安装脚本会自动设置）：
+> - `NPM_REGISTRY` — npm 镜像地址，默认 `https://registry.npmjs.org`
+> - `GOPROXY` — Go 模块代理，默认 `https://proxy.golang.org,direct`
+> - `ALPINE_MIRROR` — Alpine apk 镜像地址，默认 `https://dl-cdn.alpinelinux.org/alpine`
 
 ## API
 
