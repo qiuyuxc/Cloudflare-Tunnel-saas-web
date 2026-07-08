@@ -1,0 +1,221 @@
+<template>
+  <div class="page-container" style="padding-top: 0;">
+    <div class="page-header">
+      <h2>域名绑定</h2>
+      <p>将域名绑定到已配置的隧道，自动配置 DNS 和 SaaS 回源</p>
+    </div>
+
+    <div v-if="!config.tunnel_id || !config.service_url" class="prereq-banner section">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-banner-warning-text)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <div>
+        <div class="prereq-title">前置条件未满足</div>
+        <div class="prereq-desc">请先在「隧道管理」选择隧道，并在「全局设置」配置转发地址。</div>
+      </div>
+    </div>
+
+    <div class="config-summary section">
+      <div class="summary-row">
+        <span class="summary-label caption-mono">隧道 ID</span>
+        <code v-if="config.tunnel_id" class="inline-code">{{ config.tunnel_id }}</code>
+        <span v-else class="summary-empty">未配置</span>
+      </div>
+      <div class="summary-row">
+        <span class="summary-label caption-mono">转发地址</span>
+        <code v-if="config.service_url" class="inline-code">{{ config.service_url }}</code>
+        <span v-else class="summary-empty">未配置</span>
+      </div>
+      <div class="summary-row">
+        <span class="summary-label caption-mono">优选 CNAME</span>
+        <code class="inline-code">{{ config.preferred_cname }}</code>
+      </div>
+    </div>
+
+    <div class="form-card section">
+      <div class="form-card-header">
+        <span class="caption-mono" style="color: var(--color-mute);">绑定新域名</span>
+      </div>
+      <div class="form-fields">
+        <div class="field">
+          <label class="field-label">主域名 <span class="field-note">对外访问域名</span></label>
+          <div class="input-wrapper">
+            <input
+              v-model="form.main_domain"
+              placeholder="例如: kukie.cn"
+              class="vercel-input"
+              :class="{ 'input-error': errors.main_domain }"
+              @blur="validate('main_domain')"
+            />
+            <span v-if="errors.main_domain" class="field-error">{{ errors.main_domain }}</span>
+          </div>
+        </div>
+        <div class="field">
+          <label class="field-label">辅助域名 <span class="field-note">用作回源</span></label>
+          <div class="input-wrapper">
+            <input
+              v-model="form.aux_domain"
+              placeholder="例如: fallback.169977.xyz"
+              class="vercel-input"
+              :class="{ 'input-error': errors.aux_domain }"
+              @blur="validate('aux_domain')"
+            />
+            <span v-if="errors.aux_domain" class="field-error">{{ errors.aux_domain }}</span>
+          </div>
+        </div>
+      </div>
+      <div class="form-action">
+        <button class="btn btn-primary" @click="handleBind" :disabled="binding || !isValid">
+          <svg v-if="binding" class="spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          {{ binding ? '绑定中...' : '绑定域名' }}
+        </button>
+      </div>
+    </div>
+
+    <div v-if="result" class="result-card section" :class="result.success ? 'success' : 'error'">
+      <div class="result-header">
+        <svg v-if="result.success" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-success)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        <svg v-else width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-error)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+        <span>{{ result.success ? '绑定成功' : '绑定失败' }}</span>
+      </div>
+      <div class="result-body">{{ result.message }}</div>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue'
+import { useMessage } from 'naive-ui'
+import { bindDomain, type BindRequest } from '../api'
+import { useConfigStore } from '../stores/config'
+
+const message = useMessage()
+const configStore = useConfigStore()
+const config = configStore.config
+
+const form = ref<BindRequest>({ main_domain: '', aux_domain: '' })
+const errors = ref<Record<string, string>>({})
+const binding = ref(false)
+const result = ref<{ success: boolean; message: string } | null>(null)
+
+const isValid = computed(() => form.value.main_domain.trim() && form.value.aux_domain.trim())
+
+function validate(field: string) {
+  const v = form.value[field as keyof BindRequest].trim()
+  errors.value[field] = field === 'main_domain' || field === 'aux_domain'
+    ? (!v ? '此字段不能为空' : '') : ''
+}
+
+async function handleBind() {
+  if (!isValid.value) return
+  binding.value = true
+  result.value = null
+  try {
+    const { data } = await bindDomain(form.value)
+    result.value = { success: true, message: data.message || '域名绑定成功' }
+    message.success('绑定成功！')
+  } catch (e: any) {
+    const errMsg = e.response?.data?.error || e.message
+    result.value = { success: false, message: errMsg }
+    message.error('绑定失败: ' + errMsg)
+  } finally {
+    binding.value = false
+  }
+}
+
+onMounted(() => { configStore.fetchConfig() })
+</script>
+
+<style scoped>
+.page-header { margin-bottom: var(--spacing-lg); }
+.section { margin-bottom: var(--spacing-md); }
+
+.prereq-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  background: var(--color-banner-warning-bg);
+  border: 1px solid var(--color-banner-warning-border);
+  border-radius: 8px;
+}
+.prereq-title { font-size: 14px; font-weight: 500; color: var(--color-banner-warning-text); }
+.prereq-desc { font-size: 14px; color: var(--color-banner-warning-text); opacity: 0.8; margin-top: 2px; }
+
+.config-summary {
+  background: var(--color-canvas);
+  border: 1px solid var(--color-hairline);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.summary-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px var(--spacing-lg);
+  border-bottom: 1px solid var(--color-hairline);
+}
+.summary-row:last-child { border-bottom: none; }
+.summary-label { color: var(--color-mute); }
+.summary-empty { color: var(--color-mute); font-size: 14px; }
+
+.form-card {
+  background: var(--color-canvas);
+  border: 1px solid var(--color-hairline);
+  border-radius: 8px;
+  padding: var(--spacing-lg);
+}
+.form-card-header { margin-bottom: var(--spacing-md); }
+.form-fields { display: flex; flex-direction: column; gap: var(--spacing-md); }
+.field { display: flex; flex-direction: column; gap: 4px; }
+.field-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-ink);
+  margin-bottom: 4px;
+}
+.field-note { font-weight: 400; color: var(--color-mute); margin-left: 4px; }
+.input-wrapper { display: flex; flex-direction: column; gap: 4px; }
+.field-error { font-size: 12px; color: var(--color-error); }
+.form-action {
+  margin-top: var(--spacing-lg);
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid var(--color-hairline);
+}
+
+.result-card {
+  padding: var(--spacing-lg);
+  border-radius: 8px;
+}
+.result-card.success {
+  background: var(--color-result-success-bg);
+  border: 1px solid var(--color-result-success-border);
+}
+.result-card.error {
+  background: var(--color-result-error-bg);
+  border: 1px solid var(--color-result-error-border);
+}
+.result-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+.result-card.success .result-header { color: var(--color-result-success-text); }
+.result-card.error .result-header { color: var(--color-result-error-text); }
+.result-body { font-size: 14px; color: var(--color-body); }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+.spin { animation: spin 1s linear infinite; }
+
+@media (max-width: 480px) {
+  .summary-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+  .field-label { display: flex; flex-direction: column; gap: 2px; }
+  .field-note { margin-left: 0; }
+}
+</style>

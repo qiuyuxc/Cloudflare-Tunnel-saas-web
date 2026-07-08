@@ -1,0 +1,13 @@
+services:
+  tunnel-manager:
+    build: .
+    container_name: tunnel-manager
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - CF_API_TOKEN=${CF_API_TOKEN}
+      - CF_ACCOUNT_ID=${CF_ACCOUNT_ID}
+      - API_KEY=${API_KEY}
+    volumes:
+      - ./data:/app/data

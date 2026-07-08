@@ -1,0 +1,112 @@
+import axios from 'axios'
+
+const api = axios.create({
+  baseURL: '/api',
+  timeout: 30000,
+})
+
+// Attach auth token to all requests
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('auth_token')
+  if (token) {
+    config.headers['X-Auth-Token'] = token
+  }
+  return config
+})
+
+// Auto-logout on 401 (e.g. backend restarted, session lost)
+api.interceptors.response.use(
+  (res) => res,
+  (err) => {
+    if (err.response?.status === 401 && window.location.pathname !== '/login') {
+      localStorage.removeItem('auth_token')
+      localStorage.removeItem('auth_username')
+      window.location.href = '/login'
+    }
+    return Promise.reject(err)
+  }
+)
+
+export interface Tunnel {
+  id: string
+  name: string
+  status: string
+}
+
+export interface Zone {
+  id: string
+  name: string
+}
+
+export interface Config {
+  tunnel_id: string
+  service_url: string
+  preferred_cname: string
+}
+
+export interface BindRequest {
+  main_domain: string
+  aux_domain: string
+}
+
+export interface ApiResponse {
+  status: string
+  error?: string
+  message?: string
+}
+
+// Auth
+export function login(username: string, password: string) {
+  return api.post<{ token: string; username: string }>('/admin/login', { username, password })
+}
+
+export function logout() {
+  return api.post('/admin/logout')
+}
+
+export function checkAuthStatus() {
+  return api.get<{ authenticated: boolean; username?: string }>('/admin/status')
+}
+
+export function changePassword(currentPassword: string, newPassword: string) {
+  return api.put('/admin/password', { current_password: currentPassword, new_password: newPassword })
+}
+
+export function changeUsername(currentPassword: string, newUsername: string) {
+  return api.put('/admin/username', { current_password: currentPassword, new_username: newUsername })
+}
+
+// Config
+export function getConfig() {
+  return api.get<Config>('/config')
+}
+
+export function setTunnelID(value: string) {
+  return api.post('/config/tunnel', { value })
+}
+
+export function setServiceURL(value: string) {
+  return api.post('/config/service', { value })
+}
+
+export function setPreferredCNAME(value: string) {
+  return api.post('/config/preferred-cname', { value })
+}
+
+// Tunnels
+export function listTunnels() {
+  return api.get<Tunnel[]>('/tunnels')
+}
+
+export function listZones() {
+  return api.get<Zone[]>('/zones')
+}
+
+// Domain
+export function bindDomain(data: BindRequest) {
+  return api.post<ApiResponse>('/domain/bind', data)
+}
+
+export function setFallbackOrigin(domain: string) {
+  return api.post<ApiResponse>('/domain/fallback', { domain })
+}

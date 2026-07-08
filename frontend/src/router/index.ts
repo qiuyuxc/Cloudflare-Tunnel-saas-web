@@ -1,0 +1,28 @@
+import { createRouter, createWebHistory } from 'vue-router'
+import Dashboard from '../views/Dashboard.vue'
+import Login from '../views/Login.vue'
+import { useConfigStore } from '../stores/config'
+
+const router = createRouter({
+  history: createWebHistory(),
+  routes: [
+    { path: '/login', name: 'login', component: Login },
+    { path: '/', name: 'dashboard', component: Dashboard, meta: { requiresAuth: true } },
+    { path: '/tunnels', name: 'tunnels', component: () => import('../views/Tunnels.vue'), meta: { requiresAuth: true } },
+    { path: '/domain', name: 'domain', component: () => import('../views/DomainBinding.vue'), meta: { requiresAuth: true } },
+    { path: '/settings', name: 'settings', component: () => import('../views/Settings.vue'), meta: { requiresAuth: true } },
+    { path: '/account', name: 'account', component: () => import('../views/Account.vue'), meta: { requiresAuth: true } },
+  ],
+})
+
+router.beforeEach((to, _from) => {
+  const store = useConfigStore()
+  if (to.meta.requiresAuth && !store.isAuthenticated) {
+    return '/login'
+  }
+  if (to.path === '/login' && store.isAuthenticated) {
+    return '/'
+  }
+})
+
+export default router
