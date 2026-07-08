@@ -42,11 +42,16 @@ docker compose logs | grep 密
 ```
 
 > 环境变量说明见压缩包内 `.env.example`。
->
-> 镜像源相关环境变量（安装脚本会自动设置）：
-> - `NPM_REGISTRY` — npm 镜像地址，默认 `https://registry.npmjs.org`
-> - `GOPROXY` — Go 模块代理，默认 `https://proxy.golang.org,direct`
-> - `ALPINE_MIRROR` — Alpine apk 镜像地址，默认 `https://dl-cdn.alpinelinux.org/alpine`
+
+### 镜像源配置
+
+安装脚本会自动选择镜像源，也可通过环境变量手动指定：
+
+| 变量 | 说明 | 国内镜像 | 默认值 |
+|------|------|----------|--------|
+| `NPM_REGISTRY` | npm 镜像地址 | `https://registry.npmmirror.com` | `https://registry.npmjs.org` |
+| `GOPROXY` | Go 模块代理 | `https://goproxy.cn,direct` | `https://proxy.golang.org,direct` |
+| `ALPINE_MIRROR` | Alpine apk 镜像 | `https://mirrors.aliyun.com/alpine/` | `https://dl-cdn.alpinelinux.org/alpine` |
 
 ## API
 
