@@ -34,6 +34,23 @@ fi
 # Create data directory for persistence
 mkdir -p data
 
+# Mirror source selection
+echo ""
+echo "🌐 选择镜像源："
+echo "  1) 国内镜像 (npmmirror / goproxy.cn / 阿里云 Alpine)"
+echo "  2) 官方源 (npmjs.org / proxy.golang.org / Alpine CDN)"
+read -p "请选择 [1/2，默认1]: " MIRROR_CHOICE
+MIRROR_CHOICE=${MIRROR_CHOICE:-1}
+
+if [ "$MIRROR_CHOICE" = "1" ]; then
+  export NPM_REGISTRY=https://registry.npmmirror.com
+  export GOPROXY=https://goproxy.cn,direct
+  export ALPINE_MIRROR=https://mirrors.aliyun.com/alpine/
+  echo "✅ 使用国内镜像源"
+else
+  echo "✅ 使用官方源"
+fi
+
 # Build and start
 echo ""
 echo "🔨 构建镜像..."
