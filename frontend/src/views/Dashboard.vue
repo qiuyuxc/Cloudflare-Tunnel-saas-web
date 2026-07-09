@@ -41,7 +41,7 @@
           <span v-else class="config-empty">尚未设置转发地址</span>
         </div>
         <div class="config-action">
-          <router-link to="/settings" class="action-link">{{ config.service_url ? '修改' : '设置地址' }}</router-link>
+          <router-link to="/domain" class="action-link">{{ config.service_url ? '修改' : '设置地址' }}</router-link>
         </div>
       </div>
 

@@ -1,6 +1,10 @@
 <template>
   <div class="page-container" style="padding-top: 0;">
     <div class="page-header">
+      <router-link to="/" class="back-link">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        返回控制面板
+      </router-link>
       <h2>全局设置</h2>
       <p>管理全局配置参数</p>
     </div>

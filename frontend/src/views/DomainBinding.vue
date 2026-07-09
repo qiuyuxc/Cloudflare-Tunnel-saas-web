@@ -1,6 +1,10 @@
 <template>
   <div class="page-container" style="padding-top: 0;">
     <div class="page-header">
+      <router-link to="/" class="back-link">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        返回控制面板
+      </router-link>
       <h2>域名绑定</h2>
       <p>将域名绑定到已配置的隧道，自动配置 DNS 和 SaaS 回源</p>
     </div>
@@ -9,7 +13,7 @@
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-banner-warning-text)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
       <div>
         <div class="prereq-title">前置条件未满足</div>
-        <div class="prereq-desc">请先在「隧道管理」选择隧道，并在「全局设置」配置转发地址。</div>
+        <div class="prereq-desc">请先在「隧道管理」选择隧道，并配置转发地址。</div>
       </div>
     </div>
 
@@ -19,14 +23,23 @@
         <code v-if="config.tunnel_id" class="inline-code">{{ config.tunnel_id }}</code>
         <span v-else class="summary-empty">未配置</span>
       </div>
-      <div class="summary-row">
+      <div class="summary-row summary-row-edit">
         <span class="summary-label caption-mono">转发地址</span>
-        <code v-if="config.service_url" class="inline-code">{{ config.service_url }}</code>
-        <span v-else class="summary-empty">未配置</span>
+        <div class="summary-edit">
+          <input v-model="serviceURL" placeholder="http://localhost:3000" class="vercel-input summary-input" />
+          <button class="btn btn-secondary btn-sm" :disabled="savingService" @click="saveServiceURL">
+            {{ savingService ? '...' : '保存' }}
+          </button>
+        </div>
       </div>
-      <div class="summary-row">
+      <div class="summary-row summary-row-edit">
         <span class="summary-label caption-mono">优选 CNAME</span>
-        <code class="inline-code">{{ config.preferred_cname }}</code>
+        <div class="summary-edit">
+          <input v-model="preferredCNAME" placeholder="cf.090227.xyz" class="vercel-input summary-input" />
+          <button class="btn btn-secondary btn-sm" :disabled="savingCNAME" @click="saveCNAME">
+            {{ savingCNAME ? '...' : '保存' }}
+          </button>
+        </div>
       </div>
     </div>
 
@@ -85,7 +98,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useMessage } from 'naive-ui'
-import { bindDomain, type BindRequest } from '../api'
+import { bindDomain, setServiceURL, setPreferredCNAME, type BindRequest } from '../api'
 import { useConfigStore } from '../stores/config'
 
 const message = useMessage()
@@ -96,6 +109,10 @@ const form = ref<BindRequest>({ main_domain: '', aux_domain: '' })
 const errors = ref<Record<string, string>>({})
 const binding = ref(false)
 const result = ref<{ success: boolean; message: string } | null>(null)
+const serviceURL = ref(config.service_url)
+const savingService = ref(false)
+const preferredCNAME = ref(config.preferred_cname)
+const savingCNAME = ref(false)
 
 const isValid = computed(() => form.value.main_domain.trim() && form.value.aux_domain.trim())
 
@@ -103,6 +120,32 @@ function validate(field: string) {
   const v = form.value[field as keyof BindRequest].trim()
   errors.value[field] = field === 'main_domain' || field === 'aux_domain'
     ? (!v ? '此字段不能为空' : '') : ''
+}
+
+async function saveServiceURL() {
+  savingService.value = true
+  try {
+    await setServiceURL(serviceURL.value)
+    config.service_url = serviceURL.value
+    message.success('转发地址已更新')
+  } catch (e: any) {
+    message.error('保存失败: ' + (e.response?.data?.error || e.message))
+  } finally {
+    savingService.value = false
+  }
+}
+
+async function saveCNAME() {
+  savingCNAME.value = true
+  try {
+    await setPreferredCNAME(preferredCNAME.value)
+    config.preferred_cname = preferredCNAME.value
+    message.success('优选 CNAME 已更新')
+  } catch (e: any) {
+    message.error('保存失败: ' + (e.response?.data?.error || e.message))
+  } finally {
+    savingCNAME.value = false
+  }
 }
 
 async function handleBind() {
@@ -157,6 +200,10 @@ onMounted(() => { configStore.fetchConfig() })
 .summary-row:last-child { border-bottom: none; }
 .summary-label { color: var(--color-mute); }
 .summary-empty { color: var(--color-mute); font-size: 14px; }
+.summary-row-edit { flex-wrap: wrap; gap: 8px; }
+.summary-edit { display: flex; gap: 8px; align-items: center; flex: 1; justify-content: flex-end; }
+.summary-input { height: 32px; font-size: 13px; max-width: 280px; }
+.btn-sm { height: 32px; padding: 0 12px; font-size: 13px; }
 
 .form-card {
   background: var(--color-canvas);

@@ -154,6 +154,7 @@ async function handleLogout() {
   letter-spacing: -0.4px;
 }
 
+
 .nav-center {
   display: flex;
   align-items: center;

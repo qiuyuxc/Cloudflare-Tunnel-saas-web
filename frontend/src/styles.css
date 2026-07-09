@@ -196,6 +196,18 @@ body {
   margin: 0;
 }
 
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--color-mute);
+  text-decoration: none;
+  margin-bottom: var(--spacing-sm);
+  transition: color 0.15s ease;
+}
+.back-link:hover { color: var(--color-ink); }
+
 /* Card layout */
 .card-grid {
   display: grid;
