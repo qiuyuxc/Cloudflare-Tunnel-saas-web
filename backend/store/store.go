@@ -36,8 +36,11 @@ func NewStore(filePath string) *Store {
 func (s *Store) load() {
 	data, err := os.ReadFile(s.filePath)
 	if err != nil {
-		// First run: generate random password, save config, print credentials
-		password := generateRandomPassword(12)
+		// First run: use ADMIN_PASSWORD env var if set, otherwise generate random
+		password := os.Getenv("ADMIN_PASSWORD")
+		if password == "" {
+			password = generateRandomPassword(12)
+		}
 		s.config.AdminPasswordHash = hashPassword(password)
 		s.save()
 		log.Printf("========================================")
@@ -56,7 +59,10 @@ func (s *Store) load() {
 		s.config.AdminUsername = "admin"
 	}
 	if s.config.AdminPasswordHash == "" {
-		password := generateRandomPassword(12)
+		password := os.Getenv("ADMIN_PASSWORD")
+		if password == "" {
+			password = generateRandomPassword(12)
+		}
 		s.config.AdminPasswordHash = hashPassword(password)
 		s.save()
 		log.Printf("========================================")
