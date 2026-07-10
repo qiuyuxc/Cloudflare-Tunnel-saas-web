@@ -25,33 +25,41 @@ Cloudflare Tunnel 可视化管理面板。通过 Web UI 一键完成隧道选择
 |---|---|
 | 前端 | Vue 3, TypeScript, Naive UI, Vite, Pinia |
 | 后端 | Go, chi, JSON file store |
-| 部署 | Docker (multi-stage), docker-compose |
+| 部署 | Docker, GitHub Actions (GHCR) |
 
 ## 部署
 
+一键安装，只需 Docker：
+
 ```bash
-tar xzf tunnel-manager.tar.gz
-cd tunnel-manager
+curl -sO https://raw.githubusercontent.com/qiuyuxc/Cloudflare-Tunnel-saas-web/main/install.sh && bash install.sh
+```
+
+脚本会自动：
+1. 下载 docker-compose.yml（国内自动检测 GHCR 连通性，慢则切换镜像加速）
+2. 引导填写 Cloudflare 凭据
+3. 拉取预构建镜像并启动
+
+首次启动可自定义管理员密码，不填则自动生成（查看日志获取）。
+
+### 环境变量
+
+| 变量 | 说明 | 必填 |
+|------|------|------|
+| `CF_API_TOKEN` | Cloudflare API Token | 是 |
+| `CF_ACCOUNT_ID` | Cloudflare Account ID | 是 |
+| `API_KEY` | API 访问密钥 | 否 |
+| `ADMIN_PASSWORD` | 管理员密码 | 否（不填随机生成） |
+
+## 更新
+
+在项目目录下执行：
+
+```bash
 ./install.sh
 ```
 
-脚本会自动检测 Docker 环境，引导填写 Cloudflare 凭据，选择镜像源（国内/官方），构建并启动服务。首次启动后查看日志获取初始密码：
-
-```bash
-docker compose logs | grep 密
-```
-
-> 环境变量说明见压缩包内 `.env.example`。
-
-### 镜像源配置
-
-安装脚本会自动选择镜像源，也可通过环境变量手动指定：
-
-| 变量 | 说明 | 国内镜像 | 默认值 |
-|------|------|----------|--------|
-| `NPM_REGISTRY` | npm 镜像地址 | `https://registry.npmmirror.com` | `https://registry.npmjs.org` |
-| `GOPROXY` | Go 模块代理 | `https://goproxy.cn,direct` | `https://proxy.golang.org,direct` |
-| `ALPINE_MIRROR` | Alpine apk 镜像 | `https://mirrors.aliyun.com/alpine/` | `https://dl-cdn.alpinelinux.org/alpine` |
+自动拉取最新镜像并重建容器。
 
 ## API
 
@@ -86,8 +94,8 @@ docker compose logs | grep 密
 │   │   ├── api/          # API 封装
 │   │   └── router/       # 路由
 │   └── vite.config.ts
-├── install.sh            # 一键部署脚本
+├── .github/workflows/    # CI 自动构建
+├── install.sh            # 一键部署/更新脚本
 ├── Dockerfile
 └── docker-compose.yml
 ```
-
