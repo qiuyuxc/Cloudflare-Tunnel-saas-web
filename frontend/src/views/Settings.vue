@@ -10,7 +10,7 @@
     </div>
 
     <div class="settings-list section">
-      <div class="settings-card">
+      <div class="settings-card card-transition" :class="{ 'stagger-item': visible }" :style="{ animationDelay: '0.08s' }">
         <div class="settings-card-header">
           <div class="settings-card-title">全局优选 CNAME</div>
           <div class="settings-card-desc">该 CNAME 将用于主域名的 DNS 解析指向，以实现优选 IP 加速。</div>
@@ -25,7 +25,7 @@
         </div>
       </div>
 
-      <div class="settings-card">
+      <div class="settings-card card-transition" :class="{ 'stagger-item': visible }" :style="{ animationDelay: '0.16s' }">
         <div class="settings-card-header">
           <div class="settings-card-title">回退源设置</div>
           <div class="settings-card-desc">设置 Custom Hostnames 的回退源（Fallback Origin），用于 SaaS 模块。</div>
@@ -40,7 +40,7 @@
         </div>
       </div>
 
-      <div class="settings-card">
+      <div class="settings-card card-transition" :class="{ 'stagger-item': visible }" :style="{ animationDelay: '0.24s' }">
         <div class="settings-card-header">
           <div class="settings-card-title">转发地址</div>
           <div class="settings-card-desc">本地服务的 URL 地址，隧道将流量转发至此地址。</div>
@@ -55,7 +55,7 @@
         </div>
       </div>
 
-      <div class="settings-card">
+      <div class="settings-card card-transition" :class="{ 'stagger-item': visible }" :style="{ animationDelay: '0.32s' }">
         <div class="settings-card-header">
           <div class="settings-card-title">隧道 ID</div>
           <div class="settings-card-desc">当前锁定的 Cloudflare Tunnel ID。</div>
@@ -83,6 +83,7 @@ import { useConfigStore } from '../stores/config'
 const message = useMessage()
 const store = useConfigStore()
 const config = store.config
+const visible = ref(false)
 
 const preferredCNAME = ref(config.preferred_cname)
 const fallbackDomain = ref('')
@@ -145,7 +146,10 @@ async function saveTunnelID() {
   }
 }
 
-onMounted(() => { store.fetchConfig() })
+onMounted(() => {
+  store.fetchConfig()
+  requestAnimationFrame(() => { visible.value = true })
+})
 </script>
 
 <style scoped>
@@ -163,6 +167,12 @@ onMounted(() => { store.fetchConfig() })
   border: 1px solid var(--color-hairline);
   border-radius: 8px;
   padding: var(--spacing-lg);
+  transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease-out;
+}
+.settings-card:hover {
+  border-color: var(--color-hairline-strong);
+  box-shadow: 0px 0px 0px 1px var(--color-hairline-strong), 0px 1px 1px rgba(0,0,0,0.02), 0px 2px 2px rgba(0,0,0,0.04);
+  transform: translateY(-1px);
 }
 
 .settings-card-header { margin-bottom: var(--spacing-md); }

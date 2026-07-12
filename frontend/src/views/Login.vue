@@ -1,6 +1,6 @@
 <template>
   <div class="login-page">
-    <div class="login-card">
+    <div class="login-card" :class="{ 'login-card-enter': mounted, 'login-card-shake': shaking }">
       <div class="login-logo">
         <svg width="32" height="32" viewBox="0 0 76 76" fill="none">
           <rect width="76" height="76" rx="12" fill="#171717"/>
@@ -47,7 +47,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { login as loginApi } from '../api'
 import { useConfigStore } from '../stores/config'
@@ -58,10 +58,17 @@ const store = useConfigStore()
 const form = reactive({ username: '', password: '' })
 const loading = ref(false)
 const error = ref('')
+const mounted = ref(false)
+const shaking = ref(false)
+
+onMounted(() => {
+  requestAnimationFrame(() => { mounted.value = true })
+})
 
 async function handleLogin() {
   if (!form.username || !form.password) {
     error.value = '请输入用户名和密码'
+    triggerShake()
     return
   }
   loading.value = true
@@ -76,9 +83,15 @@ async function handleLogin() {
     } else {
       error.value = '登录失败: ' + (e.response?.data?.error || e.message)
     }
+    triggerShake()
   } finally {
     loading.value = false
   }
+}
+
+function triggerShake() {
+  shaking.value = true
+  setTimeout(() => { shaking.value = false }, 500)
 }
 </script>
 
@@ -101,6 +114,18 @@ async function handleLogin() {
   border-radius: 12px;
   padding: var(--spacing-2xl);
   text-align: center;
+  opacity: 0;
+  transform: translateY(16px) scale(0.98);
+  transition: opacity 0.5s ease-out, transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.login-card-enter {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.login-card-shake {
+  animation: shake 0.45s ease-out;
 }
 
 .login-logo {
@@ -157,11 +182,23 @@ async function handleLogin() {
 .spinner {
   width: 14px;
   height: 14px;
-  border: 2px solid transparent;
+  border: 2px solid rgba(255,255,255,0.2);
   border-top-color: currentColor;
   border-radius: 50%;
   animation: spin 0.6s linear infinite;
 }
 
+.login-error {
+  animation: fadeIn 0.3s ease-out;
+}
+
 @keyframes spin { to { transform: rotate(360deg); } }
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-4px); }
+  40% { transform: translateX(4px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(3px); }
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 </style>

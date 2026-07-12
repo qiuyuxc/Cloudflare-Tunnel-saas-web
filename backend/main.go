@@ -1,6 +1,10 @@
 package main
 
 import (
+	"crypto/rand"
+	"encoding/hex"
+	"flag"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -16,16 +20,44 @@ import (
 )
 
 func main() {
+	// CLI flags for password management
+	resetPassword := flag.Bool("reset-password", false, "Generate a new random admin password")
+	setPassword := flag.String("set-password", "", "Set admin password to a specific value")
+	flag.Parse()
+
+	storePath := os.Getenv("STORE_PATH")
+	if storePath == "" {
+		storePath = "data/config.json"
+	}
+
+	// Handle password reset CLI commands (don't require CF credentials)
+	if *resetPassword || *setPassword != "" {
+		st := store.NewStore(storePath)
+		username, _ := st.GetAdminCredentials()
+
+		var newPassword string
+		if *setPassword != "" {
+			newPassword = *setPassword
+		} else {
+			newPassword = generateRandomPassword(12)
+		}
+
+		st.SetAdminCredentials(username, store.HashPassword(newPassword))
+		fmt.Printf("========================================\n")
+		fmt.Printf("  密码已重置\n")
+		fmt.Printf("  用户名: %s\n", username)
+		fmt.Printf("  新密码: %s\n", newPassword)
+		fmt.Printf("  请登录后立即修改密码！\n")
+		fmt.Printf("========================================\n")
+		return
+	}
+
 	apiToken := os.Getenv("CF_API_TOKEN")
 	accountID := os.Getenv("CF_ACCOUNT_ID")
 	apiKey := os.Getenv("API_KEY")
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
-	}
-	storePath := os.Getenv("STORE_PATH")
-	if storePath == "" {
-		storePath = "data/config.json"
 	}
 
 	if apiToken == "" || accountID == "" {
@@ -109,4 +141,10 @@ func main() {
 	if err := http.ListenAndServe(addr, r); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func generateRandomPassword(length int) string {
+	b := make([]byte, length)
+	rand.Read(b)
+	return hex.EncodeToString(b)[:length]
 }

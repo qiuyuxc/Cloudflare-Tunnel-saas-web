@@ -31,7 +31,7 @@
     </div>
 
     <div v-if="tunnels.length > 0" class="tunnel-list section">
-      <div v-for="tunnel in tunnels" :key="tunnel.id" class="tunnel-card">
+      <div v-for="(tunnel, idx) in tunnels" :key="tunnel.id" class="tunnel-card card-transition" :class="{ 'stagger-item': listVisible }" :style="{ animationDelay: `${0.05 * idx}s` }">
         <div class="tunnel-card-left">
           <div class="tunnel-icon">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
@@ -75,12 +75,17 @@ const config = configStore.config
 
 const tunnels = ref<Tunnel[]>([])
 const loading = ref(false)
+const listVisible = ref(false)
 
 async function loadTunnels() {
   loading.value = true
+  listVisible.value = false
   try {
     const { data } = await listTunnels()
     tunnels.value = data
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => { listVisible.value = true })
+    })
   } catch (e: any) {
     message.error('获取隧道列表失败: ' + (e.response?.data?.error || e.message))
   } finally {
@@ -142,8 +147,12 @@ onMounted(() => { loadTunnels() })
   padding: var(--spacing-md) var(--spacing-lg);
   background: var(--color-canvas);
   gap: var(--spacing-md);
+  transition: background-color 0.2s ease, transform 0.25s ease;
 }
-.tunnel-card:hover { background: var(--color-canvas-soft); }
+.tunnel-card:hover {
+  background: var(--color-canvas-soft);
+  transform: translateX(2px);
+}
 .tunnel-card-left {
   display: flex;
   align-items: center;
@@ -217,7 +226,7 @@ onMounted(() => { loadTunnels() })
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.2s ease;
   border: none;
 }
 .btn-select { background: transparent; color: var(--color-ink); border: 1px solid var(--color-hairline); }

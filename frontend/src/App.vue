@@ -4,7 +4,11 @@
       <n-layout class="app-layout">
         <nav-bar />
         <main class="main-content">
-          <router-view />
+          <router-view v-slot="{ Component }">
+            <transition name="page">
+              <component :is="Component" :key="$route.fullPath" />
+            </transition>
+          </router-view>
         </main>
       </n-layout>
     </n-config-provider>
@@ -36,6 +40,32 @@ if (configStore.darkMode) {
 }
 
 .main-content {
+  position: relative;
   width: 100%;
+}
+
+/* Page route transitions — only the leaving page overlays, enter stays in flow */
+.page-enter-active {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.page-leave-active {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.page-enter-from {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.page-leave-to {
+  opacity: 0;
+  transform: translateY(-6px);
 }
 </style>

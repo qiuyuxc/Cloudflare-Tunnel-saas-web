@@ -18,6 +18,7 @@ Cloudflare Tunnel 可视化管理面板。通过 Web UI 一键完成隧道选择
 - 优选 CNAME：自定义全局优选域名
 - 回退源设置：一键配置 fallback origin
 - 管理员认证：用户名/密码登录，支持修改密码
+- 密码重置：忘记密码时通过 CLI 命令重置
 
 ## 技术栈
 
@@ -25,41 +26,35 @@ Cloudflare Tunnel 可视化管理面板。通过 Web UI 一键完成隧道选择
 |---|---|
 | 前端 | Vue 3, TypeScript, Naive UI, Vite, Pinia |
 | 后端 | Go, chi, JSON file store |
-| 部署 | Docker, GitHub Actions (GHCR) |
+| 部署 | Docker (multi-stage), docker-compose |
 
 ## 部署
 
-一键安装，只需 Docker：
-
 ```bash
-curl -sO https://raw.githubusercontent.com/qiuyuxc/Cloudflare-Tunnel-saas-web/main/install.sh && bash install.sh
-```
-
-脚本会自动：
-1. 下载 docker-compose.yml（国内自动检测 GHCR 连通性，慢则切换镜像加速）
-2. 引导填写 Cloudflare 凭据
-3. 拉取预构建镜像并启动
-
-首次启动可自定义管理员密码，不填则自动生成（查看日志获取）。
-
-### 环境变量
-
-| 变量 | 说明 | 必填 |
-|------|------|------|
-| `CF_API_TOKEN` | Cloudflare API Token | 是 |
-| `CF_ACCOUNT_ID` | Cloudflare Account ID | 是 |
-| `API_KEY` | API 访问密钥 | 否 |
-| `ADMIN_PASSWORD` | 管理员密码 | 否（不填随机生成） |
-
-## 更新
-
-在项目目录下执行：
-
-```bash
+tar xzf tunnel-manager.tar.gz
+cd tunnel-manager
 ./install.sh
 ```
 
-自动拉取最新镜像并重建容器。
+脚本会自动检测 Docker 环境，引导填写 Cloudflare 凭据，构建并启动服务。首次启动后查看日志获取初始密码：
+
+```bash
+docker compose logs | grep 密
+```
+
+> 环境变量说明见压缩包内 `.env.example`。
+
+### 重置密码
+
+忘记密码时，在容器内执行：
+
+```bash
+# 随机生成新密码
+docker compose exec tunnel-manager ./tunnel-manager --reset-password
+
+# 设置为指定密码
+docker compose exec tunnel-manager ./tunnel-manager --set-password=新密码
+```
 
 ## API
 
@@ -94,8 +89,7 @@ curl -sO https://raw.githubusercontent.com/qiuyuxc/Cloudflare-Tunnel-saas-web/ma
 │   │   ├── api/          # API 封装
 │   │   └── router/       # 路由
 │   └── vite.config.ts
-├── .github/workflows/    # CI 自动构建
-├── install.sh            # 一键部署/更新脚本
+├── install.sh            # 一键部署脚本
 ├── Dockerfile
 └── docker-compose.yml
 ```

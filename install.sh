@@ -8,6 +8,7 @@ echo "=============================="
 echo "  Tunnel Manager 安装/更新"
 echo "=============================="
 
+# Check dependencies
 command -v docker >/dev/null 2>&1 || { echo "❌ 未安装 Docker，请先安装"; exit 1; }
 if docker compose version >/dev/null 2>&1; then
   COMPOSE="docker compose"
@@ -17,32 +18,62 @@ else
   echo "❌ 未安装 Docker Compose"; exit 1
 fi
 
-# Download docker-compose.yml if missing (first run via curl | bash)
+command -v git >/dev/null 2>&1 || { echo "❌ 未安装 Git，请先安装"; exit 1; }
+
+# If not inside the repo (no docker-compose.yml), clone it first
 if [ ! -f docker-compose.yml ]; then
   echo ""
-  echo "📥 首次使用，下载配置文件..."
+  echo "📥 首次使用，下载项目..."
+  # Ask mirror first since clone needs it
   echo "🌐 选择下载源："
   echo "  1) 国内加速 (ghfast.top)"
   echo "  2) GitHub 直连"
-  read -p "请选择 [1/2，默认1]: " DL_MIRROR
-  DL_MIRROR=${DL_MIRROR:-1}
-  if [ "$DL_MIRROR" = "1" ]; then
-    BASE="https://ghfast.top/https://raw.githubusercontent.com/qiuyuxc/Cloudflare-Tunnel-saas-web/main"
+  read -p "请选择 [1/2，默认1]: " CLONE_MIRROR
+  CLONE_MIRROR=${CLONE_MIRROR:-1}
+  if [ "$CLONE_MIRROR" = "1" ]; then
+    CLONE_URL="https://ghfast.top/https://github.com/qiuyuxc/Cloudflare-Tunnel-saas-web.git"
   else
-    BASE="https://raw.githubusercontent.com/qiuyuxc/Cloudflare-Tunnel-saas-web/main"
+    CLONE_URL="https://github.com/qiuyuxc/Cloudflare-Tunnel-saas-web.git"
   fi
-  curl -sO "$BASE/docker-compose.yml"
-  # Auto-detect: if ghcr.io is slow (>3s), switch to NJU mirror
-  GHCR_TIME=$(curl -s -o /dev/null -w "%{time_total}" --connect-timeout 3 --max-time 5 "https://ghcr.io/v2/" 2>/dev/null || echo "99")
-  if [ "$(echo "$GHCR_TIME > 3" | bc 2>/dev/null || echo 1)" = "1" ]; then
-    sed -i 's|ghcr.io|ghcr.nju.edu.cn|g' docker-compose.yml
-    echo "✅ GHCR 响应慢 (${GHCR_TIME}s)，已切换镜像加速"
-  fi
-  echo "✅ docker-compose.yml 已下载"
+  git clone "$CLONE_URL"
+  cd Cloudflare-Tunnel-saas-web
+  export MIRROR_CHOICE="$CLONE_MIRROR"
+  exec bash install.sh "$@"
 fi
 
-# First-time config
-if [ ! -f .env ]; then
+# Mirror source selection (skip if already chosen during clone)
+if [ -z "$MIRROR_CHOICE" ]; then
+  echo ""
+  echo "🌐 选择镜像源："
+  echo "  1) 国内镜像 (npmmirror / goproxy.cn / 阿里云 Alpine / GitHub 加速)"
+  echo "  2) 官方源 (npmjs.org / proxy.golang.org / Alpine CDN / GitHub 直连)"
+  read -p "请选择 [1/2，默认1]: " MIRROR_CHOICE
+  MIRROR_CHOICE=${MIRROR_CHOICE:-1}
+fi
+
+if [ "$MIRROR_CHOICE" = "1" ]; then
+  export NPM_REGISTRY=https://registry.npmmirror.com
+  export GOPROXY=https://goproxy.cn,direct
+  export ALPINE_MIRROR=https://mirrors.aliyun.com/alpine/
+  GITHUB_PREFIX="https://ghfast.top/"
+  echo "✅ 使用国内镜像源"
+else
+  GITHUB_PREFIX=""
+  echo "✅ 使用官方源"
+fi
+REPO_URL="${GITHUB_PREFIX}https://github.com/qiuyuxc/Cloudflare-Tunnel-saas-web.git"
+
+# Detect install or update
+if [ -f .env ]; then
+  echo ""
+  echo "📦 检测到已有配置，执行更新..."
+  if [ -d .git ]; then
+    git remote set-url origin "$REPO_URL" 2>/dev/null || git remote add origin "$REPO_URL"
+    echo "🔄 拉取最新代码..."
+    git pull origin main
+  fi
+  source .env
+else
   echo ""
   echo "📝 首次运行，配置环境变量："
   read -p "CF_API_TOKEN: " CF_TOKEN
@@ -57,21 +88,15 @@ API_KEY=${API_KEY}
 ADMIN_PASSWORD=${ADMIN_PASS}
 EOF
   echo "✅ .env 已生成"
-else
-  echo ""
-  echo "📦 检测到已有配置，执行更新..."
-  source .env
 fi
 
+# Create data directory for persistence
 mkdir -p data
 
-# Pull and start
+# Build and start
 echo ""
-echo "⬇️  拉取镜像..."
-if ! $COMPOSE pull 2>/dev/null; then
-  echo "⚠️  镜像拉取失败，尝试本地构建..."
-  $COMPOSE build
-fi
+echo "🔨 构建镜像..."
+DOCKER_BUILDKIT=1 $COMPOSE build --no-cache --progress=plain
 
 echo ""
 echo "🚀 启动服务..."
@@ -83,6 +108,7 @@ echo "  ✅ 部署完成！"
 echo "  访问: http://$(hostname -I | awk '{print $1}'):8080"
 echo ""
 
+# Show password hint
 if [ -z "$ADMIN_PASS" ]; then
   echo "  ⚠️  未设置密码，已自动生成"
   echo "  查看日志获取初始密码:"
@@ -96,5 +122,7 @@ echo "  常用命令:"
 echo "    查看日志: $COMPOSE logs -f"
 echo "    停止服务: $COMPOSE down"
 echo "    重启服务: $COMPOSE restart"
+echo "    重置密码: $COMPOSE exec tunnel-manager ./tunnel-manager --reset-password"
+echo "    设置密码: $COMPOSE exec tunnel-manager ./tunnel-manager --set-password=新密码"
 echo "    更新服务: $0"
 echo "=============================="

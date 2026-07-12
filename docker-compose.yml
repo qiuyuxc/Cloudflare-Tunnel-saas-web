@@ -1,7 +1,11 @@
 services:
   tunnel-manager:
-    image: ghcr.io/qiuyuxc/tunnel-manager:latest
-    build: .
+    build:
+      context: .
+      args:
+        NPM_REGISTRY: ${NPM_REGISTRY:-https://registry.npmjs.org}
+        GOPROXY: ${GOPROXY:-https://proxy.golang.org,direct}
+        ALPINE_MIRROR: ${ALPINE_MIRROR:-https://dl-cdn.alpinelinux.org/alpine}
     container_name: tunnel-manager
     restart: unless-stopped
     ports:

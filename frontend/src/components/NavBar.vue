@@ -162,6 +162,7 @@ async function handleLogout() {
 }
 
 .nav-link {
+  position: relative;
   padding: 6px 12px;
   border-radius: 9999px;
   font-size: 14px;
@@ -169,7 +170,7 @@ async function handleLogout() {
   line-height: 20px;
   color: var(--color-body);
   text-decoration: none;
-  transition: all 0.15s ease;
+  transition: color 0.2s ease, background 0.2s ease, font-weight 0.2s ease;
 }
 
 .nav-link:hover {
@@ -200,7 +201,7 @@ async function handleLogout() {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.15s ease;
+  transition: all 0.2s ease;
 }
 
 .icon-button:hover {
@@ -237,7 +238,7 @@ async function handleLogout() {
   height: 2px;
   background: var(--color-ink);
   border-radius: 1px;
-  transition: all 0.2s ease;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.2s ease;
 }
 
 .hamburger-line.open:nth-child(1) {
@@ -281,7 +282,7 @@ async function handleLogout() {
   font-weight: 500;
   color: var(--color-body);
   text-decoration: none;
-  transition: all 0.15s ease;
+  transition: all 0.2s ease;
 }
 
 .mobile-nav-link:hover,
@@ -310,7 +311,7 @@ async function handleLogout() {
   cursor: pointer;
   width: 100%;
   text-align: left;
-  transition: all 0.15s ease;
+  transition: all 0.2s ease;
 }
 
 .mobile-logout-btn:hover {
@@ -319,11 +320,14 @@ async function handleLogout() {
 }
 
 /* Transitions */
-.fade-enter-active, .fade-leave-active { transition: opacity 0.2s ease; }
+.fade-enter-active { transition: opacity 0.25s ease-out; }
+.fade-leave-active { transition: opacity 0.2s ease-in; }
 .fade-enter-from, .fade-leave-to { opacity: 0; }
 
-.slide-enter-active, .slide-leave-active { transition: all 0.25s ease; }
-.slide-enter-from, .slide-leave-to { opacity: 0; transform: translateY(-12px); }
+.slide-enter-active { transition: opacity 0.3s ease-out, transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+.slide-leave-active { transition: opacity 0.2s ease-in, transform 0.2s ease-in; }
+.slide-enter-from { opacity: 0; transform: translateY(-8px); }
+.slide-leave-to { opacity: 0; transform: translateY(-4px); }
 
 @media (max-width: 768px) {
   .nav-center { display: none; }

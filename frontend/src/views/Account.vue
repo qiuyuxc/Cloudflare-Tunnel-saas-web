@@ -10,7 +10,7 @@
     </div>
 
     <div class="settings-list">
-      <div class="settings-card">
+      <div class="settings-card card-transition" :class="{ 'stagger-item': visible }" :style="{ animationDelay: '0.08s' }">
         <div class="settings-card-header">
           <div class="settings-card-title">修改用户名</div>
           <div class="settings-card-desc">当前用户名: <strong>{{ store.username }}</strong></div>
@@ -30,7 +30,7 @@
         </div>
       </div>
 
-      <div class="settings-card">
+      <div class="settings-card card-transition" :class="{ 'stagger-item': visible }" :style="{ animationDelay: '0.16s' }">
         <div class="settings-card-header">
           <div class="settings-card-title">修改密码</div>
           <div class="settings-card-desc">密码长度不少于 6 位</div>
@@ -54,13 +54,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useMessage } from 'naive-ui'
 import { changePassword, changeUsername } from '../api'
 import { useConfigStore } from '../stores/config'
 
 const message = useMessage()
 const store = useConfigStore()
+const visible = ref(false)
 
 const newUsername = ref('')
 const usernamePassword = ref('')
@@ -85,6 +86,10 @@ async function saveUsername() {
     savingUsername.value = false
   }
 }
+
+onMounted(() => {
+  requestAnimationFrame(() => { visible.value = true })
+})
 
 async function savePassword() {
   if (!currentPassword.value || !newPassword.value) {
@@ -122,6 +127,12 @@ async function savePassword() {
   border: 1px solid var(--color-hairline);
   border-radius: 8px;
   padding: var(--spacing-lg);
+  transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease-out;
+}
+.settings-card:hover {
+  border-color: var(--color-hairline-strong);
+  box-shadow: 0px 0px 0px 1px var(--color-hairline-strong), 0px 1px 1px rgba(0,0,0,0.02), 0px 2px 2px rgba(0,0,0,0.04);
+  transform: translateY(-1px);
 }
 
 .settings-card-header { margin-bottom: var(--spacing-md); }

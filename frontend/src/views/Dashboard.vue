@@ -6,14 +6,14 @@
     </div>
 
     <!-- Status Summary -->
-    <div class="status-banner" :class="isReady ? 'ready' : 'pending'">
+    <div class="status-banner" :class="[isReady ? 'ready' : 'pending', { 'stagger-item': visible }]" style="animation-delay: 0s;">
       <div class="status-banner-dot" :class="isReady ? 'ready' : 'pending'" />
       <span>{{ isReady ? '所有参数已就绪，可以绑定域名' : '部分参数未配置，请完成以下步骤' }}</span>
     </div>
 
     <!-- Config Cards Grid -->
     <div class="card-grid card-grid-3 section">
-      <div class="config-card">
+      <div class="config-card card-transition card-hover-lift" :class="{ 'stagger-item': visible }" style="animation-delay: 0.08s;">
         <div class="config-card-top">
           <span class="config-label caption-mono">隧道</span>
           <span class="config-badge" :class="config.tunnel_id ? 'active' : 'inactive'">
@@ -29,7 +29,7 @@
         </div>
       </div>
 
-      <div class="config-card">
+      <div class="config-card card-transition card-hover-lift" :class="{ 'stagger-item': visible }" style="animation-delay: 0.16s;">
         <div class="config-card-top">
           <span class="config-label caption-mono">转发地址</span>
           <span class="config-badge" :class="config.service_url ? 'active' : 'inactive'">
@@ -45,7 +45,7 @@
         </div>
       </div>
 
-      <div class="config-card">
+      <div class="config-card card-transition card-hover-lift" :class="{ 'stagger-item': visible }" style="animation-delay: 0.24s;">
         <div class="config-card-top">
           <span class="config-label caption-mono">优选 CNAME</span>
           <span class="config-badge active">已配置</span>
@@ -61,7 +61,7 @@
 
     <!-- Quick Actions -->
     <div class="section">
-      <div class="actions-card">
+      <div class="actions-card card-transition" :class="{ 'stagger-item': visible }" style="animation-delay: 0.32s;">
         <span class="actions-label caption-mono">快速操作</span>
         <div class="actions-row">
           <router-link to="/tunnels" class="btn btn-primary">
@@ -83,14 +83,19 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useConfigStore } from '../stores/config'
 
 const configStore = useConfigStore()
 const config = computed(() => configStore.config)
 const isReady = computed(() => !!(config.value.tunnel_id && config.value.service_url))
 
-onMounted(() => { configStore.fetchConfig() })
+const visible = ref(false)
+
+onMounted(() => {
+  configStore.fetchConfig()
+  requestAnimationFrame(() => { visible.value = true })
+})
 </script>
 
 <style scoped>
@@ -121,9 +126,18 @@ onMounted(() => { configStore.fetchConfig() })
   height: 8px;
   border-radius: 50%;
   flex-shrink: 0;
+  transition: background-color 0.4s ease;
 }
 .status-banner-dot.ready { background: var(--color-success); }
-.status-banner-dot.pending { background: var(--color-warning); }
+.status-banner-dot.pending {
+  background: var(--color-warning);
+  animation: pulse-subtle 2.5s ease-in-out infinite;
+}
+
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
 
 /* Config Cards */
 .config-card {
@@ -137,6 +151,7 @@ onMounted(() => { configStore.fetchConfig() })
 }
 .config-card:hover {
   box-shadow: 0px 0px 0px 1px var(--color-hairline-strong), 0px 1px 1px rgba(0,0,0,0.02), 0px 2px 2px rgba(0,0,0,0.04);
+  transform: translateY(-1px);
 }
 .config-card-top {
   display: flex;

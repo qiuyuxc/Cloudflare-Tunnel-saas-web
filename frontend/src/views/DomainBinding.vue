@@ -84,7 +84,8 @@
       </div>
     </div>
 
-    <div v-if="result" class="result-card section" :class="result.success ? 'success' : 'error'">
+    <transition name="result-slide">
+      <div v-if="result" class="result-card section" :class="result.success ? 'success' : 'error'">
       <div class="result-header">
         <svg v-if="result.success" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-success)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
         <svg v-else width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-error)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
@@ -92,6 +93,7 @@
       </div>
       <div class="result-body">{{ result.message }}</div>
     </div>
+    </transition>
   </div>
 </template>
 
@@ -255,6 +257,22 @@ onMounted(() => { configStore.fetchConfig() })
 
 @keyframes spin { to { transform: rotate(360deg); } }
 .spin { animation: spin 1s linear infinite; }
+
+/* Result card transition */
+.result-slide-enter-active {
+  animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.result-slide-leave-active {
+  animation: fadeIn 0.2s ease-in reverse;
+}
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
 
 @media (max-width: 480px) {
   .summary-row {
