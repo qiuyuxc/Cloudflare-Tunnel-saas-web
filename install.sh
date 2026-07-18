@@ -31,12 +31,12 @@ if [ ! -f docker-compose.yml ]; then
   read -p "请选择 [1/2，默认1]: " CLONE_MIRROR
   CLONE_MIRROR=${CLONE_MIRROR:-1}
   if [ "$CLONE_MIRROR" = "1" ]; then
-    CLONE_URL="https://ghfast.top/https://github.com/qiuyuxc/Cloudflare-Tunnel-saas-web.git"
+    CLONE_URL="https://ghfast.top/https://github.com/qiuyuxc/tunnel-manager.git"
   else
-    CLONE_URL="https://github.com/qiuyuxc/Cloudflare-Tunnel-saas-web.git"
+    CLONE_URL="https://github.com/qiuyuxc/tunnel-manager.git"
   fi
   git clone "$CLONE_URL"
-  cd Cloudflare-Tunnel-saas-web
+  cd tunnel-manager
   export MIRROR_CHOICE="$CLONE_MIRROR"
   exec bash install.sh "$@"
 fi
@@ -61,7 +61,7 @@ else
   GITHUB_PREFIX=""
   echo "✅ 使用官方源"
 fi
-REPO_URL="${GITHUB_PREFIX}https://github.com/qiuyuxc/Cloudflare-Tunnel-saas-web.git"
+REPO_URL="${GITHUB_PREFIX}https://github.com/qiuyuxc/tunnel-manager.git"
 
 # Detect install or update
 if [ -f .env ]; then
