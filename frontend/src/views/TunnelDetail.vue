@@ -43,10 +43,9 @@
           </div>
         </div>
 
-        <!-- Add/Edit Form -->
-        <div v-if="showForm" class="route-form card-transition" :class="{ 'stagger-item': formVisible }">
-          <div class="form-title">{{ editing ? '修改路由' : '新增路由' }}</div>
-          <div class="form-row">
+        <!-- Add/Edit Modal -->
+        <n-modal v-model:show="showForm" preset="card" :title="editing ? '修改路由' : '新增路由'" class="route-modal" :bordered="false" :segmented="{ content: true, footer: true }" :auto-focus="false">
+          <div class="modal-form">
             <div class="form-field">
               <label class="form-label">主机名</label>
               <input v-model="form.hostname" placeholder="example.com" class="vercel-input" />
@@ -56,13 +55,15 @@
               <input v-model="form.service" placeholder="http://localhost:3000" class="vercel-input" />
             </div>
           </div>
-          <div class="form-actions">
-            <button class="btn btn-ghost" @click="cancelForm">取消</button>
-            <button class="btn btn-primary" :disabled="saving || !form.hostname || !form.service" @click="submitForm">
-              {{ saving ? '保存中...' : (editing ? '更新' : '添加') }}
-            </button>
-          </div>
-        </div>
+          <template #footer>
+            <div class="modal-footer">
+              <button class="btn btn-ghost" @click="showForm = false">取消</button>
+              <button class="btn btn-primary" :disabled="saving || !form.hostname || !form.service" @click="submitForm">
+                {{ saving ? '保存中...' : (editing ? '更新' : '添加') }}
+              </button>
+            </div>
+          </template>
+        </n-modal>
 
         <div v-if="routes.length > 0" class="route-grid">
           <div v-for="(rule, idx) in routes" :key="idx" class="route-card card-transition" :class="{ 'stagger-item': visible }" :style="{ animationDelay: `${0.2 + idx * 0.04}s` }">
@@ -103,7 +104,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { useMessage } from 'naive-ui'
+import { useMessage, NModal } from 'naive-ui'
 import { getTunnelDetail, addIngressRule, updateIngressRule, type TunnelDetail as TunnelDetailType, type IngressRule } from '../api'
 
 const route = useRoute()
@@ -117,7 +118,6 @@ const routes = computed(() => detail.value?.ingress ?? [])
 
 // Form state
 const showForm = ref(false)
-const formVisible = ref(false)
 const editing = ref(false)
 const saving = ref(false)
 const editOldHostname = ref('')
@@ -141,7 +141,6 @@ function startAdd() {
   editOldHostname.value = ''
   form.value = { hostname: '', service: '' }
   showForm.value = true
-  requestAnimationFrame(() => { formVisible.value = true })
 }
 
 function startEdit(rule: IngressRule) {
@@ -149,12 +148,6 @@ function startEdit(rule: IngressRule) {
   editOldHostname.value = rule.hostname || ''
   form.value = { hostname: rule.hostname || '', service: rule.service }
   showForm.value = true
-  formVisible.value = true
-}
-
-function cancelForm() {
-  showForm.value = false
-  formVisible.value = false
 }
 
 async function submitForm() {
@@ -168,7 +161,7 @@ async function submitForm() {
       await addIngressRule(tunnelID, form.value.hostname, form.value.service)
       message.success('路由已添加')
     }
-    cancelForm()
+    showForm.value = false
     await load()
   } catch (e: any) {
     message.error('操作失败: ' + (e.response?.data?.error || e.message))
@@ -328,8 +321,6 @@ onMounted(() => { load() })
   .info-grid { grid-template-columns: 1fr; }
   .route-grid { grid-template-columns: 1fr; }
   .route-card { padding: var(--spacing-md); }
-  .form-row { flex-direction: column; }
-  .form-field { min-width: 0; }
   .section-actions { flex-wrap: wrap; }
 }
 
@@ -339,24 +330,11 @@ onMounted(() => { load() })
   gap: 10px;
 }
 
-.route-form {
-  background: var(--color-canvas);
-  border: 1px solid var(--color-hairline);
-  border-radius: 8px;
-  padding: var(--spacing-lg);
-  margin-bottom: var(--spacing-md);
-}
-.form-title {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--color-ink);
-  margin-bottom: var(--spacing-md);
-}
-.form-row {
+.modal-form {
   display: flex;
+  flex-direction: column;
   gap: var(--spacing-md);
 }
-.form-field { flex: 1; min-width: 0; }
 .form-label {
   display: block;
   font-size: 12px;
@@ -366,11 +344,31 @@ onMounted(() => { load() })
   text-transform: uppercase;
   letter-spacing: 0.4px;
 }
-.form-actions {
+.modal-footer {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
-  margin-top: var(--spacing-md);
+}
+
+/* Modal size */
+.route-modal {
+  max-width: 480px;
+  width: 100%;
+}
+@media (max-width: 768px) {
+  .route-modal {
+    max-width: 85vw;
+    transform: scale(0.88);
+    transform-origin: center center;
+  }
+}
+
+/* Speed up modal transition */
+:deep(.n-modal) {
+  --n-duration: 0.15s;
+}
+:deep(.n-mask) {
+  --n-duration: 0.15s;
 }
 
 .btn-icon {
