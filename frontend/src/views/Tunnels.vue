@@ -43,6 +43,7 @@
         </div>
         <div class="tunnel-card-right">
           <span class="status-tag" :class="tunnel.status">{{ tunnel.status }}</span>
+          <router-link :to="`/tunnels/${tunnel.id}`" class="btn-sm btn-select">详情</router-link>
           <button
             class="btn-sm"
             :class="config.tunnel_id === tunnel.id ? 'btn-active' : 'btn-select'"

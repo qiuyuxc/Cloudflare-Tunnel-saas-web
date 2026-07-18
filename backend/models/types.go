@@ -77,6 +77,12 @@ type FallbackRequest struct {
 	Domain string `json:"domain"`
 }
 
+// CustomHostname represents a Cloudflare SaaS custom hostname
+type CustomHostname struct {
+	ID       string `json:"id"`
+	Hostname string `json:"hostname"`
+}
+
 // SetValueRequest is a generic request for setting a single value
 type SetValueRequest struct {
 	Value string `json:"value"`

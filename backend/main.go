@@ -103,6 +103,9 @@ func main() {
 
 		// Tunnel endpoints
 		r.Get("/tunnels", mw.Auth(tunnelHandler.ListTunnels))
+		r.Get("/tunnels/{tunnelID}", mw.Auth(tunnelHandler.GetTunnelDetail))
+		r.Post("/tunnels/{tunnelID}/ingress", mw.Auth(tunnelHandler.AddIngressRule))
+		r.Put("/tunnels/{tunnelID}/ingress", mw.Auth(tunnelHandler.UpdateIngressRule))
 		r.Get("/zones", mw.Auth(tunnelHandler.ListZones))
 
 		// Domain endpoints

@@ -66,15 +66,23 @@ func (h *DomainHandler) BindDomain(w http.ResponseWriter, r *http.Request) {
 		{Hostname: req.AuxDomain, Service: cfg.ServiceURL},
 	}
 
-	if len(tunnelCfg.Result.Config.Ingress) > 0 {
-		ingress := tunnelCfg.Result.Config.Ingress
-		lastRule := ingress[len(ingress)-1]
-		ingress = append(ingress[:len(ingress)-1], newRules...)
-		ingress = append(ingress, lastRule)
-		tunnelCfg.Result.Config.Ingress = ingress
-	} else {
-		tunnelCfg.Result.Config.Ingress = append(newRules, models.IngressRule{Service: "http_status:404"})
+	// Deduplicate: remove existing rules for these hostnames, then insert updated ones
+	ingress := tunnelCfg.Result.Config.Ingress
+	filtered := make([]models.IngressRule, 0, len(ingress))
+	for _, rule := range ingress {
+		if rule.Hostname != req.MainDomain && rule.Hostname != req.AuxDomain {
+			filtered = append(filtered, rule)
+		}
 	}
+	if len(filtered) > 0 {
+		lastRule := filtered[len(filtered)-1]
+		filtered = filtered[:len(filtered)-1]
+		filtered = append(filtered, newRules...)
+		filtered = append(filtered, lastRule)
+	} else {
+		filtered = append(newRules, models.IngressRule{Service: "http_status:404"})
+	}
+	tunnelCfg.Result.Config.Ingress = filtered
 
 	updatePayload := map[string]interface{}{
 		"config": tunnelCfg.Result.Config,
@@ -97,9 +105,9 @@ func (h *DomainHandler) BindDomain(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Create SaaS custom hostname
-	if err := h.cf.CreateCustomHostname(auxZoneID, req.MainDomain, req.AuxDomain); err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": fmt.Sprintf("create custom hostname: %s", err.Error())})
+	// Upsert SaaS custom hostname
+	if err := h.cf.UpsertCustomHostname(auxZoneID, req.MainDomain, req.AuxDomain); err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": fmt.Sprintf("upsert custom hostname: %s", err.Error())})
 		return
 	}
 

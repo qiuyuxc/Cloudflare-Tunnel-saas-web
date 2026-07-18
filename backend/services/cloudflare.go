@@ -221,9 +221,8 @@ func (c *CloudflareClient) SetFallbackOrigin(zoneID, origin string) error {
 	return c.do(req, nil)
 }
 
-// CreateCustomHostname creates a SaaS custom hostname
-func (c *CloudflareClient) CreateCustomHostname(zoneID, hostname, originServer string) error {
-	path := fmt.Sprintf("/zones/%s/custom_hostnames", zoneID)
+// UpsertCustomHostname creates or updates a SaaS custom hostname
+func (c *CloudflareClient) UpsertCustomHostname(zoneID, hostname, originServer string) error {
 	payload := map[string]interface{}{
 		"hostname":             hostname,
 		"custom_origin_server": originServer,
@@ -234,7 +233,23 @@ func (c *CloudflareClient) CreateCustomHostname(zoneID, hostname, originServer s
 	}
 	body, _ := json.Marshal(payload)
 
-	req, err := c.newRequest("POST", path, strings.NewReader(string(body)))
+	// Check if custom hostname already exists
+	listURL := fmt.Sprintf("/zones/%s/custom_hostnames?hostname=%s", zoneID, url.QueryEscape(hostname))
+	req, err := c.newRequest("GET", listURL, nil)
+	if err != nil {
+		return err
+	}
+
+	var existing []models.CustomHostname
+	if err := c.do(req, &existing); err == nil && len(existing) > 0 {
+		// Update existing
+		updateURL := fmt.Sprintf("/zones/%s/custom_hostnames/%s", zoneID, existing[0].ID)
+		req, err = c.newRequest("PATCH", updateURL, strings.NewReader(string(body)))
+	} else {
+		// Create new
+		createURL := fmt.Sprintf("/zones/%s/custom_hostnames", zoneID)
+		req, err = c.newRequest("POST", createURL, strings.NewReader(string(body)))
+	}
 	if err != nil {
 		return err
 	}

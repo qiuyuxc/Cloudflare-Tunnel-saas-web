@@ -33,6 +33,18 @@ export interface Tunnel {
   status: string
 }
 
+export interface IngressRule {
+  hostname?: string
+  service: string
+}
+
+export interface TunnelDetail {
+  id: string
+  name: string
+  status: string
+  ingress: IngressRule[]
+}
+
 export interface Zone {
   id: string
   name: string
@@ -96,6 +108,18 @@ export function setPreferredCNAME(value: string) {
 // Tunnels
 export function listTunnels() {
   return api.get<Tunnel[]>('/tunnels')
+}
+
+export function getTunnelDetail(tunnelID: string) {
+  return api.get<TunnelDetail>(`/tunnels/${tunnelID}`)
+}
+
+export function addIngressRule(tunnelID: string, hostname: string, service: string) {
+  return api.post<ApiResponse>(`/tunnels/${tunnelID}/ingress`, { hostname, service })
+}
+
+export function updateIngressRule(tunnelID: string, old_hostname: string, hostname: string, service: string) {
+  return api.put<ApiResponse>(`/tunnels/${tunnelID}/ingress`, { old_hostname, hostname, service })
 }
 
 export function listZones() {

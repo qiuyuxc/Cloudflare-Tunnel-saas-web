@@ -42,21 +42,6 @@
 
       <div class="settings-card card-transition" :class="{ 'stagger-item': visible }" :style="{ animationDelay: '0.24s' }">
         <div class="settings-card-header">
-          <div class="settings-card-title">转发地址</div>
-          <div class="settings-card-desc">本地服务的 URL 地址，隧道将流量转发至此地址。</div>
-        </div>
-        <div class="settings-input-row">
-          <div class="input-wrapper">
-            <input v-model="serviceURL" placeholder="http://localhost:3000" class="vercel-input" />
-          </div>
-          <button class="btn btn-primary" :disabled="savingService" @click="saveServiceURL">
-            {{ savingService ? '保存中...' : '保存' }}
-          </button>
-        </div>
-      </div>
-
-      <div class="settings-card card-transition" :class="{ 'stagger-item': visible }" :style="{ animationDelay: '0.32s' }">
-        <div class="settings-card-header">
           <div class="settings-card-title">隧道 ID</div>
           <div class="settings-card-desc">当前锁定的 Cloudflare Tunnel ID。</div>
         </div>
@@ -77,7 +62,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useMessage } from 'naive-ui'
-import { setPreferredCNAME, setFallbackOrigin, setServiceURL, setTunnelID } from '../api'
+import { setPreferredCNAME, setFallbackOrigin, setTunnelID } from '../api'
 import { useConfigStore } from '../stores/config'
 
 const message = useMessage()
@@ -87,12 +72,10 @@ const visible = ref(false)
 
 const preferredCNAME = ref(config.preferred_cname)
 const fallbackDomain = ref('')
-const serviceURL = ref(config.service_url)
 const tunnelID = ref(config.tunnel_id)
 
 const savingCNAME = ref(false)
 const savingFallback = ref(false)
-const savingService = ref(false)
 const savingTunnel = ref(false)
 
 async function savePreferredCNAME() {
@@ -117,19 +100,6 @@ async function saveFallback() {
     message.error('设置失败: ' + (e.response?.data?.error || e.message))
   } finally {
     savingFallback.value = false
-  }
-}
-
-async function saveServiceURL() {
-  savingService.value = true
-  try {
-    await setServiceURL(serviceURL.value)
-    config.service_url = serviceURL.value
-    message.success('转发地址已更新')
-  } catch (e: any) {
-    message.error('保存失败: ' + (e.response?.data?.error || e.message))
-  } finally {
-    savingService.value = false
   }
 }
 
