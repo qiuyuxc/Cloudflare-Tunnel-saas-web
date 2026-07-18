@@ -104,6 +104,7 @@ const navItems = [
   { path: '/tunnels', label: '隧道管理' },
   { path: '/domain', label: '域名绑定' },
   { path: '/settings', label: '全局设置' },
+  { path: '/telegram', label: 'TG 机器人' },
   { path: '/account', label: '账户' },
 ]
 

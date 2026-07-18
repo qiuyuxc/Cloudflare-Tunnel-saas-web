@@ -17,10 +17,14 @@ func NewConfigHandler(s *store.Store) *ConfigHandler {
 	return &ConfigHandler{store: s}
 }
 
-// GetConfig returns the current configuration
+// GetConfig returns the current configuration (sanitized)
 func (h *ConfigHandler) GetConfig(w http.ResponseWriter, r *http.Request) {
 	cfg := h.store.GetConfig()
-	writeJSON(w, http.StatusOK, cfg)
+	writeJSON(w, http.StatusOK, map[string]string{
+		"tunnel_id":       cfg.TunnelID,
+		"service_url":     cfg.ServiceURL,
+		"preferred_cname": cfg.PreferredCNAME,
+	})
 }
 
 // SetTunnelID sets the active tunnel ID

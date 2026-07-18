@@ -27,6 +27,8 @@ func NewStore(filePath string) *Store {
 		config: models.Config{
 			PreferredCNAME: "cf.090227.xyz",
 			AdminUsername:  "admin",
+			TGMode:         "polling",
+			TGApiEndpoint:  "https://api.telegram.org",
 		},
 	}
 	s.load()
@@ -58,6 +60,12 @@ func (s *Store) load() {
 	if s.config.AdminUsername == "" {
 		s.config.AdminUsername = "admin"
 	}
+	if s.config.TGMode == "" {
+		s.config.TGMode = "polling"
+	}
+	if s.config.TGApiEndpoint == "" {
+		s.config.TGApiEndpoint = "https://api.telegram.org"
+	}
 	if s.config.AdminPasswordHash == "" {
 		password := os.Getenv("ADMIN_PASSWORD")
 		if password == "" {
@@ -75,7 +83,7 @@ func (s *Store) load() {
 
 func (s *Store) save() {
 	data, _ := json.MarshalIndent(s.config, "", "  ")
-	os.WriteFile(s.filePath, data, 0644)
+	os.WriteFile(s.filePath, data, 0600)
 }
 
 // GetConfig returns the current configuration
@@ -139,6 +147,33 @@ func HashPassword(password string) string {
 // hashPassword is an internal alias for convenience
 func hashPassword(password string) string {
 	return HashPassword(password)
+}
+
+// SetTelegramSettings saves all bot settings atomically
+func (s *Store) SetTelegramSettings(enabled bool, token, adminIDs, mode, webhookURL, apiEndpoint string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.config.TGBotEnabled = enabled
+	if token != "" {
+		s.config.TGBotToken = token
+	}
+	s.config.TGAdminIDs = adminIDs
+	if mode != "" {
+		s.config.TGMode = mode
+	}
+	s.config.TGWebhookURL = webhookURL
+	if apiEndpoint != "" {
+		s.config.TGApiEndpoint = apiEndpoint
+	}
+	s.save()
+}
+
+// SetTelegramWebhookSecret persists the webhook verification secret
+func (s *Store) SetTelegramWebhookSecret(secret string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.config.TGWebhookSecret = secret
+	s.save()
 }
 
 func generateRandomPassword(length int) string {

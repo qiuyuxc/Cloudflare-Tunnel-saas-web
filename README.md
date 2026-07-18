@@ -17,6 +17,7 @@ Cloudflare Tunnel 可视化管理面板。通过 Web UI 一键完成隧道选择
 - 域名绑定：自动配置 Tunnel 路由 + DNS CNAME + SaaS Custom Hostname
 - 优选 CNAME：自定义全局优选域名
 - 回退源设置：一键配置 fallback origin
+- Telegram Bot：远程管理隧道，支持长轮询 / Webhook + 自定义 API 端点
 - 管理员认证：用户名/密码登录，支持修改密码
 - 密码重置：忘记密码时通过 CLI 命令重置
 
@@ -71,14 +72,19 @@ docker compose exec tunnel-manager ./tunnel-manager --set-password=新密码
 | GET | `/api/zones` | 列出 Zone | 需要 |
 | POST | `/api/domain/bind` | 绑定域名 | 需要 |
 | POST | `/api/domain/fallback` | 设置回退源 | 需要 |
+| GET | `/api/telegram/settings` | Bot 设置 | 需要 |
+| PUT | `/api/telegram/settings` | 保存 Bot 设置 | 需要 |
+| GET | `/api/telegram/status` | Bot 运行状态 | 需要 |
+| POST | `/api/telegram/test` | 发送测试消息 | 需要 |
+| POST | `/api/telegram/webhook` | Webhook 入口 | Secret Token |
 
 ## 项目结构
 
 ```
 ├── backend/
 │   ├── main.go           # 入口，路由注册
-│   ├── handlers/         # HTTP handlers
-│   ├── services/         # Cloudflare API 客户端
+│   ├── handlers/         # HTTP handlers（含 telegram.go）
+│   ├── services/         # 业务逻辑（cloudflare, domain, telegram）
 │   ├── models/           # 数据类型
 │   └── store/            # JSON 文件存储
 ├── frontend/

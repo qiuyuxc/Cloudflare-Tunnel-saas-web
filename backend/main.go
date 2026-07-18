@@ -68,11 +68,17 @@ func main() {
 	st := store.NewStore(storePath)
 	cf := services.NewCloudflareClient(apiToken, accountID)
 
+	// Initialize services
+	domainService := services.NewDomainService(cf, st)
+
 	// Initialize handlers
 	configHandler := handlers.NewConfigHandler(st)
 	tunnelHandler := handlers.NewTunnelHandler(cf)
-	domainHandler := handlers.NewDomainHandler(cf, st)
+	domainHandler := handlers.NewDomainHandler(domainService)
 	adminHandler := handlers.NewAdminHandler(st)
+
+	telegramBot := services.NewTelegramBot(st, cf, domainService)
+	telegramHandler := handlers.NewTelegramHandler(st, telegramBot)
 
 	mw := &handlers.Middleware{
 		APIKey:       apiKey,
@@ -112,12 +118,26 @@ func main() {
 		r.Post("/domain/bind", mw.Auth(domainHandler.BindDomain))
 		r.Post("/domain/fallback", mw.Auth(domainHandler.SetFallbackOrigin))
 
+		// Telegram bot endpoints
+		r.Get("/telegram/settings", mw.Auth(telegramHandler.GetSettings))
+		r.Put("/telegram/settings", mw.Auth(telegramHandler.SaveSettings))
+		r.Get("/telegram/status", mw.Auth(telegramHandler.GetStatus))
+		r.Post("/telegram/test", mw.Auth(telegramHandler.SendTest))
+		r.Post("/telegram/webhook", telegramHandler.Webhook) // no auth: verified via secret token
+
 		// Health check (no auth)
 		r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusOK)
 			w.Write([]byte(`{"status":"ok"}`))
 		})
 	})
+
+	// Auto-start Telegram bot if enabled
+	if st.GetConfig().TGBotEnabled {
+		if err := telegramBot.Start(); err != nil {
+			log.Printf("telegram bot auto-start failed: %v", err)
+		}
+	}
 
 	// Serve frontend static files (SPA fallback)
 	staticDir := os.Getenv("STATIC_DIR")

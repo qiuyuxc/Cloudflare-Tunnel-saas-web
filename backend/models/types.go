@@ -4,11 +4,19 @@ import "encoding/json"
 
 // Config represents the application configuration state
 type Config struct {
-	TunnelID           string `json:"tunnel_id"`
-	ServiceURL         string `json:"service_url"`
-	PreferredCNAME     string `json:"preferred_cname"`
-	AdminUsername      string `json:"admin_username"`
-	AdminPasswordHash  string `json:"admin_password_hash"`
+	TunnelID          string `json:"tunnel_id"`
+	ServiceURL        string `json:"service_url"`
+	PreferredCNAME    string `json:"preferred_cname"`
+	AdminUsername     string `json:"admin_username"`
+	AdminPasswordHash string `json:"admin_password_hash"`
+	// Telegram bot settings
+	TGBotEnabled    bool   `json:"tg_bot_enabled"`
+	TGBotToken      string `json:"tg_bot_token"`
+	TGAdminIDs      string `json:"tg_admin_ids"`
+	TGMode          string `json:"tg_mode"`
+	TGWebhookURL    string `json:"tg_webhook_url"`
+	TGWebhookSecret string `json:"tg_webhook_secret"`
+	TGApiEndpoint   string `json:"tg_api_endpoint"`
 }
 
 // Tunnel represents a Cloudflare Tunnel
@@ -110,4 +118,35 @@ type ChangePasswordRequest struct {
 type ChangeUsernameRequest struct {
 	CurrentPassword string `json:"current_password"`
 	NewUsername     string `json:"new_username"`
+}
+
+// TelegramSettingsRequest is the request body for saving bot settings
+type TelegramSettingsRequest struct {
+	Enabled    bool   `json:"enabled"`
+	BotToken   string `json:"bot_token"`
+	AdminTGIDs string `json:"admin_tg_ids"`
+	Mode       string `json:"mode"`
+	WebhookURL string `json:"webhook_url"`
+	ApiEndpoint string `json:"api_endpoint"`
+}
+
+// TelegramSettingsResponse is the response body for getting bot settings
+type TelegramSettingsResponse struct {
+	Enabled      bool   `json:"enabled"`
+	BotTokenSet  bool   `json:"bot_token_set"`
+	BotTokenHint string `json:"bot_token_hint"`
+	AdminTGIDs   string `json:"admin_tg_ids"`
+	Mode         string `json:"mode"`
+	WebhookURL   string `json:"webhook_url"`
+	ApiEndpoint  string `json:"api_endpoint"`
+}
+
+// TelegramStatusResponse is the response body for bot status
+type TelegramStatusResponse struct {
+	Enabled      bool   `json:"enabled"`
+	Running      bool   `json:"running"`
+	Mode         string `json:"mode"`
+	BotUsername  string `json:"bot_username"`
+	LastError    string `json:"last_error"`
+	LastUpdateAt string `json:"last_update_at"`
 }
